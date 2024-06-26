@@ -38,7 +38,13 @@ class Layer:
         return self._neurons
     
     def set_neurons(self, neurons:list[float]):
-        self._neurons = np.array(neurons).reshape(-1, 1)
+        if isinstance(neurons, list):
+            self._neurons = np.array(neurons).reshape(-1, 1)
+        if isinstance(neurons, np.array):
+            self._neurons = neurons
+        else:
+            raise ValueError("Unsupported neuron data foramt")
+                
         
     def get_weights(self):
         return self._weights
@@ -82,11 +88,12 @@ class Network:
         self.first_layer().set_neurons(input_data)
         for i in range(1, self._depth):
             self._layers[i].execute()
+            print(self._layers[i].get_neurons())
         return np.max(self.last_layer().get_neurons())
             
         
 
 #Testing
-test = Network([5,2])
-happy = test.execute_network([0.02*a for a in range(5)])
+test = Network([100,20,20,20,20,20,20,10])
+happy = test.execute_network([0.02*a for a in range(100)])
 print(happy)
