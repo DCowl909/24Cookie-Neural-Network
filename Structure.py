@@ -22,7 +22,9 @@ class Layer:
         else:
             # Initalise weights and biases
             prevLayerSize = previousLayer.size()
-            self._weights = np.ones((size, prevLayerSize))
+            #self._weights = np.zeros((size, prevLayerSize))
+            self._weights = np.random.randint(-1, 1, (size, prevLayerSize))
+            print(self._weights)
             self._biases = np.zeros(size).reshape(-1, 1)
             
 
@@ -40,10 +42,15 @@ class Layer:
     def set_neurons(self, neurons:list[float]):
         if isinstance(neurons, list):
             self._neurons = np.array(neurons).reshape(-1, 1)
-        if isinstance(neurons, np.array):
-            self._neurons = neurons
+        elif isinstance(neurons, np.ndarray):
+            if neurons.shape[1]== 1: #if it is a column vector
+                self._neurons = neurons
+            elif neurons.shape[0] == 1: #if it is a row vector
+                self._neurons = neurons.reshape(-1, 1)
+            else:
+                raise ValueError("Unsupported neuron data format")
         else:
-            raise ValueError("Unsupported neuron data foramt")
+            raise ValueError("Unsupported neuron data format")
                 
         
     def get_weights(self):
@@ -81,19 +88,16 @@ class Network:
     def get_network_layers(self) -> dict[int, Layer]:
         return self._layers
     
-    def execute_network(self, input_data: list[float]):
+    def execute_network(self, input_data: np.ndarray | list):
         if len(input_data) != self._layers[0].size():
             raise ValueError("Input data has dimension not matching first neural layer.")
         
         self.first_layer().set_neurons(input_data)
         for i in range(1, self._depth):
             self._layers[i].execute()
-            print(self._layers[i].get_neurons())
+            
+        print("LAST LAYER:")
+        print(self._layers[i].get_neurons())
         return np.max(self.last_layer().get_neurons())
             
         
-
-#Testing
-test = Network([100,20,20,20,20,20,20,10])
-happy = test.execute_network([0.02*a for a in range(100)])
-print(happy)
