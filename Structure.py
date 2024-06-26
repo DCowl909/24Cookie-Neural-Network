@@ -23,7 +23,7 @@ class Layer:
             # Initalise weights and biases
             prevLayerSize = previousLayer.size()
             #self._weights = np.zeros((size, prevLayerSize))
-            self._weights = np.random.randint(-1, 1, (size, prevLayerSize))
+            self._weights = np.random.uniform(-1, 1, (size, prevLayerSize))
             print(self._weights)
             self._biases = np.zeros(size).reshape(-1, 1)
             
