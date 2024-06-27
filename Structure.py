@@ -1,5 +1,7 @@
 import numpy as np
 from Helpers import *
+from ImageProcessing import *
+import glob
 
 """
 Represents an individual layer 
@@ -22,9 +24,7 @@ class Layer:
         else:
             # Initalise weights and biases
             prevLayerSize = previousLayer.size()
-            #self._weights = np.zeros((size, prevLayerSize))
             self._weights = np.random.uniform(-1, 1, (size, prevLayerSize))
-            print(self._weights)
             self._biases = np.zeros(size).reshape(-1, 1)
             
 
@@ -72,6 +72,7 @@ class Network:
     def __init__(self, layerSizes: list[int]):
         
         self._depth = len(layerSizes)
+        self._trainingData = {}
         
         #Initalise all the layers
         self._layers = {}
@@ -84,7 +85,11 @@ class Network:
     
     def last_layer(self):
         return self._layers[self._depth-1]
-            
+    
+    def get_network_weights_biases(self) -> list[tuple[np.matrix, np.ndarray]]:
+        layers = self._layers
+        return [(layers[i].get_weights(), layers[i].get_biases()) for i in range(self._depth)]
+        
     def get_network_layers(self) -> dict[int, Layer]:
         return self._layers
     
@@ -99,5 +104,33 @@ class Network:
         print("LAST LAYER:")
         print(self._layers[i].get_neurons())
         return np.max(self.last_layer().get_neurons())
+    
+    def set_training_data_paths(self, directory: str, labels:list) -> None:
+        """Assigns each data file's path to it's label by setting the trainingData parameter. 
+            Currently only works for pngs
+
+        Args:
+            directory (str): The relative directory to obtain the training data. This method 
+            expects the data to be organised such that each piece of data with the same label
+                is in it's own folder, where the folder is named what the label is.
+            labels (list[Any]): the list of labels for the data. These should match the names of
+                the folders in the directory. Order of these does not need to match order of folders.
+                
+        Returns: 
+            None 
+        """
+        #Store and sorts all the directories to their label
+        self._trainingData
+        for label in labels:
+            self._trainingData[label] = collect_images(f"{directory}/{label}")
+            
+    def train_network():
+        return NotImplemented        
+        
+#Test
+test_network = Network([784,16,16,10])
+test_network.set_training_data_paths("../24CookieTrainingData/sample/dataset", [0,1,2,3,4,5,6,7,8,9])
+print((test_network._trainingData))
+            
             
         
