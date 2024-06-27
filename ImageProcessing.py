@@ -1,4 +1,5 @@
 from PIL import Image
+import glob
 import numpy as np
 
 def scale(arr: int) -> int:
@@ -23,3 +24,14 @@ def get_image_data(image_path: str) -> np.array:
     
     image.close()
     return scale(alpha_flat_array)
+
+
+
+
+def collect_images(image_folder_path: str) -> list[str]:
+    """Obtains a list of all the directories of png files inside a folder path.
+    """
+    image_files = []
+    
+    image_files.extend(glob.glob(f"{image_folder_path}/*.png"))
+    return image_files    
