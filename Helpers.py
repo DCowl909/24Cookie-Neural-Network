@@ -14,6 +14,19 @@ def inv_sig(x: float) -> float:
     
     return -1 * np.log((1/x) - 1)
 
+def inv_sigmoid(z: np.ndarray) -> np.ndarray:
+    """ This function implements the inverse sigmoid function, and 
+    expects a numpy array as argument """
+    
+    if not isinstance(z, np.ndarray):
+        raise ValueError("The input must be a numpy array")
+    
+    if np.any((z <= 0) | (z >= 1)):
+        raise ValueError("The input values must be in the range (0, 1)")
+    
+    logit = np.log(z / (1 - z))
+    return logit
+
 def sigmoid(z: np.ndarray) -> np.ndarray:
     """ This function implements the sigmoid function, and 
     expects a numpy array as argument """
@@ -45,6 +58,3 @@ def maxNeuron(neuronArr: np.ndarray):
     size = neuronArr.size
     return max((neuronArr[i], i) for i in range(size))[1]
 
-
-print(sig(69))
-inv_sig(1)

@@ -55,5 +55,7 @@ def collect_data(directory: str, labels:list) -> dict[any, list[np.ndarray]]:
         for label in labels:
             imagePaths = collect_images(f"{directory}/{label}")
             sortedData[label] = [get_image_data(path) for path in imagePaths]
+            print(f"Collected data for label {label}.")
         return sortedData
-    
+
+
