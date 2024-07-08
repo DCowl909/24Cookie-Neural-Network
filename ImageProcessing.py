@@ -2,28 +2,39 @@ from PIL import Image
 import glob
 import numpy as np
 
-def scale(arr: int) -> int:
+def scale(arr: np.ndarray) -> np.ndarray:
     return np.divide(arr, 255)
 
+def invert(arr: np.matrix):
+    full = 255 * np.ones(arr.shape)
+    return full - arr
+        
 def get_image_data(image_path: str) -> np.array:
-    """Returns an np array of the alpha values for each pixel 
-        of a 28x28 image. Used as input data for the 24cookie network.
+    """Returns an np array of the alpha channels, or average RGB values for each pixel 
+       of a 28x28 image. Used as input data for the 24cookie network.
     """
     image = Image.open(image_path)
     if image.size != (28, 28):
         raise ValueError("Image has wrong dimensions")
     
     np_array = np.array(image)
-    if np_array.shape[2] != 4:
-        raise ValueError("Image does not have an alpha channel")
     
-    # Extract the alpha channel
-    alpha_np_array = np_array[:, :, 3]
-    #flatten the array to a column vector
-    alpha_flat_array = alpha_np_array.flatten().reshape(784, 1)
+    # Check if the image has an alpha channel
+    if np_array.shape[2] == 4:
+        # Extract the RGB channels and ignore the alpha channel
+        np_array = np_array[:, :, 3]
+    elif np_array.shape[2] == 3:
+        # If the image doesn't have an alpha channel, use the RGB channels as is and invert
+        np_array = np_array
+        np_array = np.mean(np_array, axis=2)
+        np_array = invert(np_array)
+    else:
+        raise ValueError("Image format not recognized")
+    # Flatten the array to a column vector
+    flat_array = np_array.flatten().reshape(784, 1)
     
     image.close()
-    return scale(alpha_flat_array)
+    return scale(flat_array)
 
 
 def collect_images(image_folder_path: str) -> list[str]:
