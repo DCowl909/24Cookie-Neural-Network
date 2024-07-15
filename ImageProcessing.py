@@ -9,7 +9,7 @@ def invert(arr: np.matrix):
     full = 255 * np.ones(arr.shape)
     return full - arr
         
-def get_image_data(image_path: str) -> np.array:
+def get_image_data(image_path: str) -> np.ndarray:
     """Returns an np array of the alpha channels, or average RGB values for each pixel 
        of a 28x28 image. Used as input data for the 24cookie network.
     """
@@ -31,29 +31,35 @@ def get_image_data(image_path: str) -> np.array:
     else:
         raise ValueError("Image format not recognized")
     # Flatten the array to a column vector
+    #print(np_array)
     flat_array = np_array.flatten().reshape(784, 1)
     
     image.close()
     return scale(flat_array)
 
 
-def collect_images(image_folder_path: str) -> list[str]:
-    """Obtains a list of all the directories of png files inside a folder path.
+def collect_files(image_folder_path: str, type: str) -> list[str]:
+    """Obtains a list of all the directories of files inside a folder path of a specified file type.
+        For example, entering type as "png" will return all the pngs. 
     """
     image_files = []
     
-    image_files.extend(glob.glob(f"{image_folder_path}/*.png"))
+    image_files.extend(glob.glob(f"{image_folder_path}/*.{type}"))
     return image_files    
 
 
-def collect_data(directory: str, labels:list) -> dict[any, list[np.ndarray]]:
-        """Creates a dictionary of sorted data by assigning each data vecot to it's label.
-            Currently only works for pngs
+def process_images(imageDirectory: str, arrayDirectory: str, labels:list) -> None:
+        """Processes a large amount of data by turning each png into an array and saving them in
+        a directory. The array directory will have an identical structure but instead of being filled
+        with pngs will be filled with a npz file containing all the arrays of that label.
 
         Args:
-            directory (str): The relative directory to obtain the training data. This method 
-            expects the data to be organised such that each piece of data with the same label
-                is in it's own folder, where the folder is named what the label is.
+            imageDirectory (str): The relative directory to obtain the training data. This method 
+                expects the data to be organised such that each piece of data with the same label
+                is in it's own folder, where the folder is named the label.
+                
+            arrayDirectory (array): The relatvie directory to save the processed training data.
+            
             labels (list[Any]): the list of labels for the data. These should match the names of
                 the folders in the directory. Order of these does not need to match order of folders.
                 
@@ -62,11 +68,50 @@ def collect_data(directory: str, labels:list) -> dict[any, list[np.ndarray]]:
             data vectors associated with that label.
         """
         #Store and sorts all the data vectors to their label
-        sortedData = {}
+        
         for label in labels:
-            imagePaths = collect_images(f"{directory}/{label}")
-            sortedData[label] = [get_image_data(path) for path in imagePaths]
-            print(f"Collected data for label {label}.")
-        return sortedData
+            imagePaths = collect_files(f"{imageDirectory}/{label}", "png")
+            processedData = [get_image_data(path) for path in imagePaths]
+            dataMatrix = np.hstack(processedData)
+            np.save(f"{arrayDirectory}/{label}/originaldata.npy", dataMatrix)
+            print(f"Processed and saved data for label {label}.")
+
+import pandas as pd
+
+def process_csv(csvDirectory: str, arrayDirectory: str):
+    """Processes a csv file of hand drawn numerical data into a data matrix format this network
+    can read. Assumes the csv has each data vector in a row seperated by commas, with the first 
+    entry in a row being the label the rest of the row is supposed to be."""
+    df = pd.read_csv(csvDirectory)
+    np_matrix = df.to_numpy()
+    np_matrix = np_matrix.T
+    
+    labels = np_matrix[0]
+    data = np_matrix[1:]
+    
+    label_matrices = {i: [] for i in range(10)}
+    for i in range(data.shape[1]):
+        label = int(labels[i])
+        label_matrices[label].append(data[:, i])
+    
+    # Convert lists to NumPy matrices
+    for label in label_matrices:
+        label_matrices[label] = np.array(label_matrices[label]).T
+        
+    for label in label_matrices:
+        np.save(f"{arrayDirectory}/{label}/secondarydata.npy", label_matrices[label] /255)
 
 
+
+
+def collect_data(arrayDirectory: str, labels: list) -> dict[int, list[np.array]]:
+    """Processes stored, preprocessed data into a dictionary the learning algorithm can use."""
+    sortedData = {}
+    for label in labels:
+        sortedData[label] = []
+        for file_directory in collect_files(f"{arrayDirectory}/{label}", "npy"):
+            dataMatrix = np.load(file_directory, allow_pickle=True)
+            sortedData[label] += [dataMatrix[:, i:i+1] for i in range(dataMatrix.shape[1] - 1)] #extracts every column of the matrix
+        print(f"Loaded data for label {label}. Amount of data = {(len(sortedData[label]))}")
+                
+    return sortedData

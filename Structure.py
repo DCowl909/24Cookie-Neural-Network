@@ -1,9 +1,5 @@
-#should put in some defensive programming
-
 import numpy as np
 from Helpers import *
-from ImageProcessing import *
-import glob
 
 """
 Represents an individual layer 
@@ -99,6 +95,8 @@ class Network:
         self._layers[layer]._neurons[index] = neuron
         
     def get_network_weights_biases(self) -> list[tuple[np.matrix, np.ndarray]]:
+        """Returns the weights and biases of the network. Note that it starts with the second layer, 
+        as the first layer does not have any weights or biases."""
         layers = self._layers
         return [(layers[i]._weights, layers[i]._biases) for i in range(1, self._depth)]
     
@@ -140,6 +138,7 @@ class Network:
         return max((outputVector[i],i) for i in range(len(outputVector)))[1]
     
     def save_network(self, name: str):
+        """Save a network's weights and biases. Is saved as a npz file."""
         # Create a list of arrays
         arrays = [np.array(self._structure)] #network structure info
         arrays += [self._layers[l]._weights for l in range(1, self._depth)] #weights
@@ -148,10 +147,14 @@ class Network:
         np.savez(f"TrainedNetworks/{name}.npz", **{f'array_{i}': arr for i, arr in enumerate(arrays)})
 
     def load_network(self, name: str):
+        """Load a saved network's weights and biases into this network."""
     
         data = np.load(f"TrainedNetworks/{name}.npz", allow_pickle=True)
         arrays_loaded = [data[f'array_{i}'] for i in range(len(data.files))]
         
+        if not np.array_equal(np.array(self._structure), arrays_loaded[0]): 
+            raise ValueError("Network you are trying to load does not match this network's structure.")\
+                
         self._structure = arrays_loaded[0]
         weights = arrays_loaded[1 : self._depth]
         biases = arrays_loaded[self._depth : 2*self._depth]

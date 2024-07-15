@@ -1,8 +1,7 @@
-#33% faster using arrays
-
 import random
-from Structure import *
 import numpy as np
+from Structure import *
+from ImageProcessing import *
 
 def cost(expected: np.ndarray, actual: np.ndarray) -> float:
     """Returns the summed difference of square of two arrays. Will throw a value error if arrays
@@ -20,19 +19,13 @@ def expected_final_layer(digit) -> np.ndarray:
 
 def totalCost(network: Network, data: dict[any, list[np.ndarray]]):
     totalCost = 0
-    #n = dataSize(data)
     for label in data:
+        expected = expected_final_layer(label)
         for vector in data[label]:
-            expected = expected_final_layer(label)
             actual = network.execute_network(vector)
             totalCost += cost(expected, actual)
     return totalCost
 
-def dataSize(data: dict[any, list[np.ndarray]]):
-    counter = 0
-    for label in data:
-        counter += len(data[label])
-    return counter
 
 def process_nablaC_vector(nablaCVector: np.ndarray, networkStructure: list[int]) -> list[tuple[np.matrix, np.ndarray]]:
     """Converts a vector representing the cost gradient, in which each element is the partial derivative of a weight or bias with respect to cost, 
@@ -58,6 +51,14 @@ def process_nablaC_vector(nablaCVector: np.ndarray, networkStructure: list[int])
         result.append((weights, biases))
     
     return result
+
+
+def dataSize(data: dict[any, list[np.ndarray]]):
+    counter = 0
+    for label in data:
+        counter += len(data[label])
+    return counter
+
         
 
     
@@ -71,27 +72,18 @@ class NetworkTrainer():
         self._dataSize = dataSize(data)
         
     def train_network(self, startingFactor: int) -> Network:
-        iterate = 160
+        iterate = 500
          
         factor = startingFactor
-        previousCost = totalCost(self._network, self._data)
         for i in range(iterate):
             nablaCost = self.total_stochastic_nabla_cost() #big column vector with length of network complexitiy
             processedNablaCost = process_nablaC_vector(-factor * nablaCost, self._network._structure)
             self._network.change_network_weights_biases(processedNablaCost)
 
             
-            if (i%20 == 0):
-                currentCost = totalCost(self._network, self._data)
-                print(f"Current total cost is {totalCost(self._network, self._data)}")
+            if (i%50 == 0):
                 print(f"Progress: {100*i/iterate}%")
-                
-                if (previousCost - currentCost) < 0:
-                    factor = factor * 0.2
-                else:
-                    factor = factor * 1.2
-                print(f"Factor: {factor}")
-                previousCost = currentCost
+                print(f"Nabla cost norm = {np.linalg.norm(nablaCost)}")
             
         return self._network
             
@@ -122,7 +114,7 @@ class NetworkTrainer():
         
         for label in self._data:
             
-            random_integers = [random.randint(0, 1000) for _ in range(200)]
+            random_integers = [random.randint(0, 14500) for _ in range(1000)]
             
             for integer in random_integers:
                 vector = self._data[label][integer]
@@ -181,31 +173,35 @@ class NetworkTrainer():
         
         
         
-            
-        
 
-#Overnight All Test
+#Learning process
 
 test_network = Network([784,16,16,10])
-test_network.load_network("allfromovernight")
-alldata = collect_data('../24CookieTrainingData/sample/dataset', [0,1,2,3,4,5,6,7,8,9])
+test_network.load_network("newdata1")
+alldata = collect_data('../24CookieTrainingData/arrays/alldata', [0,1,2,3,4,5,6,7,8,9])
 print(f"DATA COLLECTED. Data Size = {dataSize(alldata)}")
+test_network.save_network("newdata1")
 
 trainer = NetworkTrainer(test_network, alldata)
-f = 5
+f = 2
 
 while True:
-    test_network.load_network("allfromovernight")
+    test_network.load_network("newdata1")
+    print(f"Factor is {f}")
 
     startingCost = totalCost(test_network, alldata)
-
+    print(f"Starting cost is {startingCost}")
+       
     test_network = trainer.train_network(f)
-    print("DONE!")
+    print("DONE GRADIENT DESCENT!")
 
     endingCost = totalCost(test_network, alldata)
+    print(f"Ending cost is {endingCost}")
     if (endingCost < startingCost):
-        test_network.save_network("allfromovernight")
+        test_network.save_network("newdata1")
         print("SAVING...")
+        f = f*1.072
     else:
-        f = f*0.9
-
+        f = f*0.5
+        
+    
